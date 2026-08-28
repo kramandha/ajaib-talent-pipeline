@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajaib — Talent Pipeline (Mock)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --canvas:#F5F6FA;
+    --paper:#FFFFFF;
+    --paper-alt:#F8F9FC;
+    --ink:#062559;
+    --ink-soft:#5B6B85;
+    --ink-faint:#9AA5BD;
+    --line:#E4E7F0;
+    --line-soft:#ECEEF6;
+    --brand:#3378F8;
+    --brand-light:#EAF1FE;
+    --brand-dark:#062559;
+    --success:#1FA97E;
+    --success-light:#E7F7F1;
+    --neutral:#9AA5BD;
+    --neutral-light:#F0F1F5;
+    --shadow-card:0 1px 2px rgba(6,37,89,.06);
+    --shadow-card-hover:0 8px 20px rgba(6,37,89,.10);
+    --shadow-panel:-10px 0 34px rgba(6,37,89,.14);
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--canvas);color:var(--ink);font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;min-height:100vh;
+  }
+  ::selection{background:var(--brand-light);}
+  button{font-family:inherit;}
+  a{color:inherit;}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex;align-items:center;gap:22px;padding:14px 26px;
+    background:var(--paper);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{
+    width:28px;height:28px;border-radius:9px;flex:0 0 auto;background:var(--brand);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;}
+  .brand-name{font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--brand-dark);letter-spacing:-.01em;}
+  .brand-sub{font-size:10.5px;color:var(--ink-faint);letter-spacing:.02em;}
+
+  .sync-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--success);position:relative;flex:0 0 auto;}
+  .sync-dot::after{
+    content:'';position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 0 0 rgba(31,169,126,.45);
+    animation:pulse 2.4s infinite;
+  }
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,169,126,.4)}70%{box-shadow:0 0 0 6px rgba(31,169,126,0)}100%{box-shadow:0 0 0 0 rgba(31,169,126,0)}}
+
+  .search-wrap{
+    margin-left:auto;display:flex;align-items:center;gap:8px;
+    background:var(--paper-alt);border-radius:9px;padding:7px 12px;width:220px;color:var(--ink-faint);
+  }
+  .search-wrap input{border:none;background:transparent;outline:none;font-size:13px;color:var(--ink);width:100%;font-family:var(--font-body);}
+  .search-wrap input::placeholder{color:var(--ink-faint);}
+
+  /* ---------- tabs ---------- */
+  .tabs{
+    display:flex;gap:6px;padding:0 26px;background:var(--paper);
+    border-bottom:1px solid var(--line);overflow-x:auto;position:sticky;top:53px;z-index:19;
+  }
+  .tab{
+    padding:12px 4px;margin-right:20px;font-family:var(--font-display);font-size:13.5px;font-weight:600;
+    color:var(--ink-faint);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;
+    transition:color .15s ease;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--brand-dark);border-bottom-color:var(--brand);}
+  .tab:focus-visible, .card:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px;}
+
+  /* ---------- board ---------- */
+  .board-wrap{padding:22px 26px 40px;}
+  .board{display:flex;gap:16px;align-items:flex-start;overflow-x:auto;padding-bottom:10px;}
+  .column{
+    flex:0 0 278px;display:flex;flex-direction:column;
+    background:var(--paper-alt);border:1px solid var(--line-soft);border-radius:14px;
+    max-height:calc(100vh - 190px);
+  }
+  .column-head{display:flex;align-items:center;gap:8px;padding:14px 14px 10px;}
+  .col-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;}
+  .col-title{font-family:var(--font-display);font-weight:600;font-size:13px;color:var(--ink);flex:1;}
+  .col-count{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-faint);}
+  .col-collapse-btn{
+    width:20px;height:20px;border-radius:6px;border:none;background:transparent;color:var(--ink-faint);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .col-collapse-btn:hover{background:var(--line-soft);color:var(--ink);}
+
+  .column-body{flex:1;overflow-y:auto;padding:2px 10px 12px;display:flex;flex-direction:column;gap:8px;min-height:60px;}
+  .column-body.drag-over{background:var(--brand-light);border-radius:0 0 14px 14px;}
+  .empty-hint{
+    font-size:11.5px;color:var(--ink-faint);text-align:center;line-height:1.5;
+    padding:22px 10px;border:1.5px dashed var(--line);border-radius:10px;margin-top:2px;
+  }
+
+  .column-collapsed{
+    flex:0 0 46px;display:flex;align-items:center;justify-content:center;
+    background:var(--paper-alt);border:1px solid var(--line-soft);border-radius:14px;
+    cursor:pointer;padding:16px 0;transition:background .15s ease;max-height:calc(100vh - 190px);
+  }
+  .column-collapsed:hover, .column-collapsed.drag-over{background:var(--brand-light);}
+  .collapsed-inner{display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .collapsed-label{
+    writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-display);
+    font-weight:600;font-size:12px;color:var(--ink-soft);letter-spacing:.02em;
+  }
+
+  /* ---------- card ---------- */
+  .card{
+    background:var(--paper);border-radius:11px;padding:13px 13px 11px;
+    box-shadow:var(--shadow-card);border-left:3px solid var(--col-color,var(--brand));
+    cursor:grab;transition:box-shadow .15s ease,transform .15s ease;
+    animation:cardIn .3s ease both;
+  }
+  .card:hover{box-shadow:var(--shadow-card-hover);transform:translateY(-1px);}
+  .card.dragging{opacity:.35;}
+  @keyframes cardIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+  .card-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+  .avatar{
+    width:26px;height:26px;border-radius:8px;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-size:10.5px;font-weight:600;color:#fff;
+  }
+  .card-id{min-width:0;}
+  .card-name{font-weight:600;font-size:13px;color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-role{font-size:11px;color:var(--ink-faint);line-height:1.2;}
+
+  .flag-line{display:flex;gap:6px;align-items:flex-start;font-size:11.3px;line-height:1.4;color:var(--ink-soft);margin-bottom:9px;}
+  .flag-line svg{flex:0 0 auto;margin-top:2px;color:var(--ink-faint);width:12px;height:12px;}
+  .flag-line.urgent{color:var(--brand-dark);}
+  .flag-line.urgent svg{color:var(--brand);}
+  .flag-line.positive svg{color:var(--success);}
+
+  .meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .dots{display:flex;gap:3px;}
+  .step-dot{width:5px;height:5px;border-radius:50%;background:var(--line);}
+  .step-dot.filled{background:var(--col-color,var(--brand));}
+  .outcome-tag{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);white-space:nowrap;}
+
+  .card-stage-select{
+    font-family:var(--font-mono);font-size:9.5px;color:var(--ink-soft);
+    border:1px solid var(--line);border-radius:999px;background:var(--paper);
+    padding:3px 7px;cursor:pointer;max-width:132px;outline:none;
+  }
+  .card-stage-select:hover{border-color:var(--brand);color:var(--brand-dark);}
+  .card-stage-select:focus{border-color:var(--brand);}
+
+  /* ---------- overlay + panel ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(6,37,89,.28);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:40;}
+  .overlay.open{opacity:1;pointer-events:auto;}
+
+  .panel{
+    position:fixed;top:0;right:0;height:100%;width:440px;max-width:92vw;background:var(--paper);
+    box-shadow:var(--shadow-panel);transform:translateX(100%);
+    transition:transform .3s cubic-bezier(.2,.9,.25,1);z-index:41;display:flex;flex-direction:column;
+  }
+  .panel.open{transform:translateX(0);}
+  .panel-head{padding:22px 20px 18px;border-bottom:1px solid var(--line);background:var(--brand-light);position:relative;}
+  .panel-close{
+    position:absolute;top:18px;right:18px;width:28px;height:28px;border-radius:8px;border:none;
+    background:rgba(255,255,255,.7);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .panel-close:hover{background:#fff;color:var(--ink);}
+  .panel-who{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-right:36px;}
+  .panel-avatar{
+    width:42px;height:42px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-size:14px;font-weight:600;color:#fff;
+  }
+  .panel-name{font-family:var(--font-display);font-weight:700;font-size:16.5px;line-height:1.25;color:var(--brand-dark);}
+  .panel-role{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+  .panel-badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+  .stage-badge{font-family:var(--font-mono);font-size:10.5px;padding:3px 9px;border-radius:999px;color:#fff;font-weight:500;}
+
+  .move-row{display:flex;align-items:center;gap:9px;}
+  .move-label{font-size:11.3px;color:var(--ink-soft);white-space:nowrap;}
+  .move-select{
+    flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 10px;
+    font-family:var(--font-body);font-size:12.3px;color:var(--ink);background:#fff;cursor:pointer;outline:none;
+  }
+  .move-select:focus{border-color:var(--brand);}
+
+  .panel-body{flex:1;overflow-y:auto;padding:20px 20px 30px;}
+  .panel-section{margin-bottom:22px;}
+  .panel-section-label{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+  .workable-box{display:flex;flex-direction:column;gap:8px;}
+  .wk-row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;}
+  .wk-row span:first-child{color:var(--ink-soft);}
+  .wk-row span:last-child{font-family:var(--font-mono);font-size:12px;color:var(--ink);}
+  .resume-link{display:flex;align-items:center;gap:5px;color:var(--brand);font-weight:500;text-decoration:none;}
+  .resume-link:hover{text-decoration:underline;}
+
+  .outcome-banner{display:flex;align-items:center;gap:9px;padding:11px 13px;border-radius:11px;background:var(--neutral-light);font-size:12.6px;color:var(--ink);}
+  .outcome-banner.hired{background:var(--success-light);}
+  .outcome-banner svg{flex:0 0 auto;color:var(--ink-soft);}
+  .outcome-banner.hired svg{color:var(--success);}
+
+  .timeline{position:relative;padding-left:22px;}
+  .timeline::before{content:'';position:absolute;left:5px;top:4px;bottom:4px;width:1.5px;background:var(--line);}
+  .t-item{position:relative;padding-bottom:18px;}
+  .t-item:last-child{padding-bottom:0;}
+  .t-dot{
+    position:absolute;left:-22px;top:2px;width:11px;height:11px;border-radius:50%;
+    background:var(--paper);border:2px solid var(--success);display:flex;align-items:center;justify-content:center;
+  }
+  .t-dot svg{color:var(--success);width:7px;height:7px;}
+  .t-item.current .t-dot{border-color:var(--brand);background:var(--brand);}
+  .t-item.upcoming .t-dot{border-color:var(--line);background:var(--paper);}
+  .t-stage{font-weight:600;font-size:12.6px;color:var(--ink);}
+  .t-item.upcoming .t-stage{color:var(--ink-faint);font-weight:500;}
+  .t-meta{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-faint);margin:2px 0 5px;}
+  .t-note{font-size:12.2px;line-height:1.55;color:var(--ink-soft);}
+  .t-item.upcoming .t-note{font-style:italic;color:var(--ink-faint);}
+  .t-current-tag{display:inline-block;font-family:var(--font-mono);font-size:9px;background:var(--brand-light);color:var(--brand);padding:1px 7px;border-radius:999px;margin-left:7px;}
+
+  /* ---------- comments ---------- */
+  .comments-sub{margin-bottom:18px;}
+  .comments-sub:last-child{margin-bottom:0;}
+  .comments-sub-label{
+    display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:9.5px;
+    color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;
+  }
+  .comments-sub-label svg{width:11px;height:11px;}
+  .comment-item{padding:9px 0;border-bottom:1px solid var(--line-soft);}
+  .comment-item:last-child{border-bottom:none;}
+  .comment-meta{display:flex;align-items:center;gap:7px;font-size:11.5px;margin-bottom:3px;}
+  .comment-author{font-weight:600;color:var(--ink);}
+  .comment-time{font-family:var(--font-mono);font-size:9.5px;color:var(--ink-faint);}
+  .comment-text{font-size:12.3px;line-height:1.5;color:var(--ink-soft);}
+  .comment-empty{font-size:11.5px;color:var(--ink-faint);font-style:italic;padding:4px 0;}
+
+  .comment-form{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .comment-input{
+    border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-family:var(--font-body);
+    font-size:12.5px;color:var(--ink);resize:vertical;min-height:54px;outline:none;background:var(--paper-alt);
+  }
+  .comment-input:focus{border-color:var(--brand);background:#fff;}
+  .comment-form-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .comment-hint{font-size:10px;color:var(--ink-faint);line-height:1.3;}
+  .comment-post-btn{
+    background:var(--brand);color:#fff;border:none;border-radius:8px;padding:7px 15px;
+    font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:0 0 auto;
+  }
+  .comment-post-btn:hover{background:var(--brand-dark);}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;bottom:22px;right:24px;background:var(--brand-dark);color:#fff;font-size:13px;
+    padding:11px 16px;border-radius:10px;box-shadow:0 10px 28px rgba(6,37,89,.25);
+    transform:translateY(14px);opacity:0;transition:all .25s ease;z-index:50;display:flex;align-items:center;gap:9px;max-width:320px;
+  }
+  .toast.show{transform:translateY(0);opacity:1;}
+  .toast svg{color:#7FB4FF;flex:0 0 auto;}
+
+  @media (max-width:640px){
+    .topbar{flex-wrap:wrap;padding:12px 16px;gap:12px;}
+    .search-wrap{width:100%;order:3;margin-left:0;}
+    .brand-sub{display:none;}
+    .board-wrap{padding:16px 16px 32px;}
+    .tabs{padding:0 16px;}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="15" height="15">
+        <circle cx="5" cy="12" r="2.3" fill="white"/>
+        <circle cx="19" cy="12" r="2.3" fill="white"/>
+        <path d="M7.6 12h8.8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="1 3.6"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <span class="brand-name">Ajaib</span>
+      <span class="brand-sub">Talent Pipeline</span>
+    </div>
+  </div>
+  <div class="sync-status">
+    <span class="sync-dot"></span>
+    <span>Workable &middot; synced 4m ago</span>
+  </div>
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="searchInput" type="text" placeholder="Search candidates">
+  </div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <button class="panel-close" id="panelClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+    </button>
+    <div class="panel-who">
+      <div class="panel-avatar" id="panelAvatar"></div>
+      <div>
+        <div class="panel-name" id="panelName"></div>
+        <div class="panel-role" id="panelRole"></div>
+      </div>
+    </div>
+    <div class="panel-badge-row" id="panelBadgeRow"></div>
+    <div class="move-row">
+      <span class="move-label">Move to</span>
+      <select class="move-select" id="moveSelect"></select>
+    </div>
+  </div>
+  <div class="panel-body">
+    <div class="panel-section">
+      <div class="panel-section-label">Synced from Workable</div>
+      <div class="workable-box" id="workableBox"></div>
+    </div>
+    <div class="panel-section" id="outcomeSection" style="display:none;"></div>
+    <div class="panel-section">
+      <div class="panel-section-label">Process &amp; notes</div>
+      <div class="timeline" id="timeline"></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-label">Comments</div>
+      <div class="comments-sub">
+        <div class="comments-sub-label">Board comments</div>
+        <div id="boardCommentsList"></div>
+        <div class="comment-form">
+          <textarea class="comment-input" id="newCommentInput" placeholder="Add a comment for the team..."></textarea>
+          <div class="comment-form-footer">
+            <span class="comment-hint">Posted here would sync out to Workable</span>
+            <button class="comment-post-btn" id="postCommentBtn">Post</button>
+          </div>
+        </div>
+      </div>
+      <div class="comments-sub">
+        <div class="comments-sub-label" id="workableCommentsLabel"></div>
+        <div id="workableCommentsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+/* ---------------- icons ---------------- */
+const ICONS = {
+  flame:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.5-2-1-2 .5 2-1 3-2 2 1-2-1-3-1-5-1 1-2 2-2 4a3 3 0 0 1-3-3c0-2 1.5-3 3-4z"/></svg>`,
+  alert:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>`,
+  clock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+  dollar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 6.5c0-1.9-2.2-3.5-5-3.5S7 4.6 7 6.5 9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>`,
+  externalLink:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>`,
+  party:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l6-1 11-11-5-5L4 15l-1 6z"/><path d="M14 6l4 4"/></svg>`,
+  archive:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8H3l1-4h16z"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>`,
+  chevronRight:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`,
+  chevronLeft:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`,
+  message:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  sync:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>`
+};
+function icon(name){ const s=document.createElement('span'); s.innerHTML=ICONS[name]||''; s.style.display='inline-flex'; return s.firstElementChild; }
+
+/* ---------------- dom helper ---------------- */
+function h(tag, attrs={}, ...children){
+  const e = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs)){
+    if(v==null) continue;
+    if(k==='class') e.className=v;
+    else if(k==='style') e.setAttribute('style',v);
+    else if(k.startsWith('on') && typeof v==='function') e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  children.flat(Infinity).forEach(c=>{
+    if(c==null || c===false) return;
+    e.appendChild(typeof c==='string' || typeof c==='number' ? document.createTextNode(c) : c);
+  });
+  return e;
+}
+
+/* ---------------- palette ---------------- */
+const BRAND='#3378F8', SUCCESS='#1FA97E', NEUTRAL='#9AA5BD';
+const AVATAR_COLORS=['#3378F8','#062559','#1FA97E','#5B6B85','#3378F8','#062559'];
+function avatarColor(name){ let s=0; for(let i=0;i<name.length;i++) s+=name.charCodeAt(i); return AVATAR_COLORS[s % AVATAR_COLORS.length]; }
+function initials(name){ return name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+function colorForColumn(colId){ if(colId==='hired') return SUCCESS; if(colId==='closed') return NEUTRAL; return BRAND; }
+
+/* ---------------- data (mock only — no real staff or candidate names) ---------------- */
+const BOARDS = {
+  th:{ name:'TH Hiring', columns:[
+      {id:'hr',label:'HR Interview'},{id:'jess',label:'Hiring Manager Interview'},{id:'mantana',label:'Panel Interview'},
+      {id:'yada',label:'Technical Interview'},{id:'laith',label:'Final Interview'},{id:'offering',label:'Offering'},
+      {id:'hired',label:'Hired'},{id:'closed',label:'Closed'}]},
+  isec:{ name:'Head of IS', columns:[
+      {id:'hr',label:'HR Interview'},{id:'justin',label:'Team Lead Interview'},{id:'sam',label:'Technical Interview'},
+      {id:'anna',label:'Panel Interview'},{id:'anderson',label:'Director Interview'},{id:'offering',label:'Offering'},
+      {id:'closed',label:'Closed'}]},
+  growth:{ name:'User Growth Team', columns:[
+      {id:'hr',label:'HR Interview'},{id:'aptitude',label:'Aptitude Test'},{id:'online',label:'Online Interview'},
+      {id:'superday',label:'Superday'},{id:'offering',label:'Offering'},{id:'hired',label:'Hired'},
+      {id:'closed',label:'Closed'}]},
+  compliance:{ name:'Compliance', columns:[
+      {id:'hr',label:'HR Interview'},{id:'ella',label:'Hiring Manager Interview'},{id:'assessment',label:'Assessment'},
+      {id:'offering',label:'Offering'},{id:'closed',label:'Closed'}]},
+  bd:{ name:'BD Crypto', columns:[
+      {id:'hr',label:'HR Interview'},{id:'aptitude_mantana',label:'Aptitude + Panel Interview'},{id:'megan',label:'Team Interview'},
+      {id:'offering',label:'Offering'},{id:'hired',label:'Hired'},{id:'closed',label:'Closed'}]}
+};
+
+const CARDS = {
+  // ---- TH Hiring ----
+  c1:{board:'th',col:'hr',name:'Kanokwan Srisuk',role:'IT / Engineering',source:'LinkedIn',applied:'26 Aug',resume:'#',
+      flag:{type:'clock',text:'HR screen booked Thu 10am'}, past:[],
+      currentNote:'Application reviewed, HR screen scheduled for Thursday.', boardComments:[], workableComments:[]},
+  c2:{board:'th',col:'hr',name:'Preecha Boonmee',role:'Compliance',source:'Referral',applied:'23 Aug',resume:'#',
+      flag:{type:'dollar',text:'Salary ask above band'}, past:[],
+      currentNote:'Screened by HR — solid GRC background, but salary expectation sits above the band for this level.',
+      boardComments:[], workableComments:[]},
+  c3:{board:'th',col:'hr',name:'Aroon Thongdee',role:'Admin',source:'Career Site',applied:'27 Aug',resume:'#',
+      flag:null, past:[], currentNote:'Awaiting HR screen.', boardComments:[], workableComments:[]},
+  c4:{board:'th',col:'jess',name:'Nattaya Wongsuwan',role:'HR',source:'LinkedIn',applied:'15 Aug',resume:'#',
+      flag:{type:'flame',text:'Strong fit — move fast'},
+      past:[{stage:'HR Interview',date:'18 Aug',by:'HR',note:'Strong communicator, immediate culture fit, fast-tracked to the next round.'}],
+      currentNote:'Hiring manager round booked for Friday. Candidate is keen and currently serving notice at her employer.',
+      boardComments:[{author:'HR',when:'2d ago',text:'Following up with the candidate directly since she has been very responsive so far.'}],
+      workableComments:[{author:'Hiring Manager (Workable)',when:'3d ago',text:'Left feedback in Workable after the screen — flagged as priority.'}]},
+  c5:{board:'th',col:'jess',name:'Somchai Rattanakul',role:'IT / Engineering',source:'LinkedIn',applied:'9 Aug',resume:'#',
+      flag:{type:'alert',text:'No response — 6 days'},
+      past:[{stage:'HR Interview',date:'12 Aug',by:'HR',note:'Good technical foundation, a few visa considerations to confirm.'}],
+      currentNote:'No response to the interview invite for six days — following up before parking this one.',
+      boardComments:[], workableComments:[]},
+  c6:{board:'th',col:'mantana',name:'Piyawan Chaiyasit',role:'Compliance / GRC',source:'Referral',applied:'5 Aug',resume:'#',
+      flag:{type:'clock',text:'Waiting on NDA sign-off'},
+      past:[{stage:'HR Interview',date:'8 Aug',by:'HR',note:'Ex Big-4 GRC background, promising documentation habits.'},
+            {stage:'Hiring Manager Interview',date:'12 Aug',by:'Hiring Manager',note:'Confident, strong stakeholder-management examples.'}],
+      currentNote:'Panel round complete — waiting on NDA sign-off before we move to referencing.',
+      boardComments:[], workableComments:[]},
+  c7:{board:'th',col:'offering',name:'Thanawat Kittisak',role:'Independent Consultant, Compliance',source:'Referral',applied:'28 Jul',resume:'#',
+      flag:{type:'flame',text:'Offer sent — decision Fri'},
+      past:[{stage:'HR Interview',date:'1 Aug',by:'HR',note:'Independent consultant, flexible on engagement model.'},
+            {stage:'Hiring Manager Interview',date:'4 Aug',by:'Hiring Manager',note:'Clear on compliance frameworks, good fit for the advisory scope.'},
+            {stage:'Panel Interview',date:'8 Aug',by:'Panel',note:'Approved — cleared to move to offer.'}],
+      currentNote:'Offer sent 25 Aug. Decision expected by Friday.',
+      boardComments:[{author:'You',when:'1d ago',text:'Confirmed with finance that the offer band has approval.'}],
+      workableComments:[{author:'Panel (Workable)',when:'6d ago',text:'Logged approval note directly on the candidate profile in Workable.'}]},
+  c8:{board:'th',col:'hired',name:'Chalisa Phromphan',role:'Engineering',source:'LinkedIn',applied:'15 Jul',resume:'#',
+      flag:null,
+      past:[{stage:'HR Interview',date:'20 Jul'},{stage:'Hiring Manager Interview',date:'23 Jul'},{stage:'Offering',date:'30 Jul'}],
+      currentNote:'Accepted. Start date confirmed for 15 September.', boardComments:[], workableComments:[]},
+  c9:{board:'th',col:'hired',name:'Kittipat Laohasiri',role:'Compliance',source:'Referral',applied:'10 Jul',resume:'#',
+      flag:{type:'flame',text:'Start ASAP — 1mo notice'},
+      past:[{stage:'HR Interview',date:'12 Jul'},{stage:'Hiring Manager Interview',date:'15 Jul'},{stage:'Panel Interview',date:'18 Jul'},{stage:'Offering',date:'22 Jul'}],
+      currentNote:'Wants to start as soon as possible — giving one month notice to current employer.',
+      boardComments:[], workableComments:[]},
+  c10:{board:'th',col:'closed',name:'Somsak Intarachai',role:'Compliance',source:'Career Site',applied:'2 Aug',resume:'#',
+      flag:{type:'clock',text:'KIV — pending headcount'}, outcomeTag:'Keep in view', past:[],
+      currentNote:'Solid candidate, but the role is on hold until headcount pre-activation clears.', boardComments:[], workableComments:[]},
+  c11:{board:'th',col:'closed',name:'Ratree Suksawat',role:'Engineering',source:'LinkedIn',applied:'30 Jul',resume:'#',
+      flag:null, outcomeTag:'Keep in view', past:[],
+      currentNote:'Reasonable technical depth — holding for a stronger match before deciding either way.', boardComments:[], workableComments:[]},
+  c12:{board:'th',col:'closed',name:'Anucha Pattanapong',role:'Engineering',source:'LinkedIn',applied:'20 Jul',resume:'#',
+      flag:null, outcomeTag:'Rejected · User', past:[],
+      currentNote:'Hiring manager passed after the final round — not the right fit for the team.', boardComments:[], workableComments:[]},
+  c13:{board:'th',col:'closed',name:'Duangjai Sirivong',role:'HR',source:'Referral',applied:'18 Jul',resume:'#',
+      flag:{type:'dollar',text:'Over budget'}, outcomeTag:'Rejected · HR', past:[],
+      currentNote:'Salary expectation significantly over budget for the level.', boardComments:[], workableComments:[]},
+  c14:{board:'th',col:'closed',name:'Chatchai Wattana',role:'Engineering',source:'LinkedIn',applied:'12 Jul',resume:'#',
+      flag:null, outcomeTag:'Withdrawn', past:[],
+      currentNote:'Accepted a competing offer before we could complete the process.', boardComments:[], workableComments:[]},
+
+  // ---- Head of IS ----
+  d1:{board:'isec',col:'hr',name:'Nopadon Charoensuk',role:'Information Security',source:'LinkedIn',applied:'24 Aug',resume:'#',
+      flag:{type:'flame',text:'Strong cert background'}, past:[],
+      currentNote:'HR screen booked. Strong CISSP + SOC background on paper.', boardComments:[], workableComments:[]},
+  d2:{board:'isec',col:'justin',name:'Wirote Panyasiri',role:'Information Security',source:'Career Site',applied:'16 Aug',resume:'#',
+      flag:null, past:[{stage:'HR Interview',date:'19 Aug',by:'HR',note:'Decent generalist InfoSec background.'}],
+      currentNote:'Team lead round booked for next week.', boardComments:[], workableComments:[]},
+  d3:{board:'isec',col:'anna',name:'Pattamaporn Suksri',role:'Information Security',source:'Referral',applied:'3 Aug',resume:'#',
+      flag:{type:'clock',text:'Panel scheduled Thu'},
+      past:[{stage:'HR Interview',date:'10 Aug'},
+            {stage:'Team Lead Interview',date:'14 Aug',by:'Team Lead',note:'Good on incident response, weaker on cloud security.'},
+            {stage:'Technical Interview',date:'18 Aug',by:'Technical Interviewer',note:'Confirmed the gaps are trainable — cleared to continue.'}],
+      currentNote:'Panel interview scheduled for Thursday.',
+      boardComments:[],
+      workableComments:[{author:'Technical Interviewer (Workable)',when:'4d ago',text:'Added interview scorecard comments in Workable after the technical round.'}]},
+  d4:{board:'isec',col:'offering',name:'Krisda Amnuayporn',role:'Information Security',source:'LinkedIn',applied:'20 Jul',resume:'#',
+      flag:{type:'flame',text:'Offer sent'},
+      past:[{stage:'HR Interview',date:'22 Jul'},{stage:'Team Lead Interview',date:'25 Jul'},{stage:'Panel Interview',date:'29 Jul'}],
+      currentNote:'Offer sent. Awaiting counter from current employer.', boardComments:[], workableComments:[]},
+  d5:{board:'isec',col:'closed',name:'Sutee Rojanasathien',role:'Information Security',source:'Career Site',applied:'1 Aug',resume:'#',
+      flag:{type:'alert',text:'No response — 9 days'}, outcomeTag:'Keep in view', past:[],
+      currentNote:'Went quiet after the director round — following up once more before closing out.', boardComments:[], workableComments:[]},
+
+  // ---- User Growth Team ----
+  e1:{board:'growth',col:'hr',name:'Malee Sukjai',role:'Community',source:'Career Site',applied:'25 Aug',resume:'#',
+      flag:null, past:[], currentNote:'HR screen booked for Monday.', boardComments:[], workableComments:[]},
+  e2:{board:'growth',col:'aptitude',name:'Anong Wichit',role:'Community',source:'LinkedIn',applied:'17 Aug',resume:'#',
+      flag:{type:'check',text:'Aptitude 180 / 200'},
+      past:[{stage:'HR Interview',date:'20 Aug',by:'Team',note:'Warm, community-oriented, good energy.'}],
+      currentNote:'Aptitude test completed — scored 180 out of 200.', boardComments:[], workableComments:[]},
+  e3:{board:'growth',col:'online',name:'Sarawut Choensawat',role:'Community',source:'Referral',applied:'9 Aug',resume:'#',
+      flag:{type:'flame',text:'Great community instincts'},
+      past:[{stage:'HR Interview',date:'12 Aug'},{stage:'Aptitude Test',date:'15 Aug',note:'Scored 165 out of 200.'}],
+      currentNote:'Online interview with the panel went very well — strong community instincts, confident English.',
+      boardComments:[{author:'Team',when:'5d ago',text:'Great signal from the interview, pushing to move fast on Superday.'}],
+      workableComments:[{author:'Team (Workable)',when:'5d ago',text:'Left a rating and comment on the candidate card in Workable.'}]},
+  e4:{board:'growth',col:'hired',name:'Ploy Kanjanapas',role:'Community',source:'LinkedIn',applied:'2 Jul',resume:'#',
+      flag:{type:'flame',text:'Starts next month'},
+      past:[{stage:'HR Interview',date:'5 Jul'},{stage:'Aptitude Test',date:'8 Jul'},{stage:'Online Interview',date:'12 Jul'},{stage:'Superday',date:'18 Jul'},{stage:'Offering',date:'22 Jul'}],
+      currentNote:'Accepted — starting the first week of next month.', boardComments:[], workableComments:[]},
+  e5:{board:'growth',col:'closed',name:'Nara Wongprasert',role:'Community',source:'Career Site',applied:'22 Jul',resume:'#',
+      flag:null, outcomeTag:'Rejected · HR', past:[],
+      currentNote:'Aptitude score came in below the bar for this role.', boardComments:[], workableComments:[]},
+
+  // ---- Compliance ----
+  f1:{board:'compliance',col:'hr',name:'Weerapong Suthichai',role:'Compliance',source:'LinkedIn',applied:'22 Aug',resume:'#',
+      flag:{type:'dollar',text:'Budget concern flagged early'}, past:[],
+      currentNote:'HR screen booked — salary ask flagged early as a possible concern.', boardComments:[], workableComments:[]},
+  f2:{board:'compliance',col:'ella',name:'Nichapa Boonyarit',role:'Compliance',source:'Career Site',applied:'11 Aug',resume:'#',
+      flag:null, past:[{stage:'HR Interview',date:'14 Aug'}], currentNote:'Hiring manager round booked for this week.',
+      boardComments:[], workableComments:[]},
+  f3:{board:'compliance',col:'assessment',name:'Thossaporn Meesuwan',role:'Compliance',source:'Referral',applied:'30 Jul',resume:'#',
+      flag:{type:'check',text:'Case study passed'},
+      past:[{stage:'HR Interview',date:'6 Aug'},{stage:'Hiring Manager Interview',date:'10 Aug',note:'Solid documentation habits, detail-oriented.'}],
+      currentNote:'Case study submitted and passed, with strong notes on SEC-facing experience.',
+      boardComments:[],
+      workableComments:[{author:'Hiring Manager (Workable)',when:'1w ago',text:'Uploaded case study feedback as a comment on the Workable profile.'}]},
+  f4:{board:'compliance',col:'closed',name:'Panida Ruangsri',role:'Compliance',source:'LinkedIn',applied:'25 Jul',resume:'#',
+      flag:{type:'clock',text:'Pending headcount approval'}, outcomeTag:'Keep in view', past:[],
+      currentNote:'Good candidate — holding until headcount is approved.', boardComments:[], workableComments:[]},
+
+  // ---- BD Crypto ----
+  g1:{board:'bd',col:'hr',name:'Teerapat Wongchai',role:'Business Development',source:'Referral',applied:'24 Aug',resume:'#',
+      flag:{type:'flame',text:'Ex-exchange BD experience'}, past:[],
+      currentNote:'HR screen booked — ex-exchange BD background looks strong on paper.', boardComments:[], workableComments:[]},
+  g2:{board:'bd',col:'aptitude_mantana',name:'Napassorn Chindasuk',role:'Business Development',source:'LinkedIn',applied:'13 Aug',resume:'#',
+      flag:{type:'clock',text:'Panel Wed'}, past:[{stage:'HR Interview',date:'16 Aug'}],
+      currentNote:'Aptitude test and panel round both booked for Wednesday.',
+      boardComments:[{author:'You',when:'2d ago',text:'Reminder sent about Wednesday panel timing.'}],
+      workableComments:[]},
+  g3:{board:'bd',col:'closed',name:'Kittisak Ruangwit',role:'Business Development',source:'Referral',applied:'20 Jul',resume:'#',
+      flag:{type:'clock',text:'KIV — Q3 budget review'}, outcomeTag:'Keep in view', past:[],
+      currentNote:'Good aptitude score — holding for the Q3 budget review.', boardComments:[], workableComments:[]},
+  g4:{board:'bd',col:'closed',name:'Anurak Phetchara',role:'Business Development',source:'LinkedIn',applied:'15 Jul',resume:'#',
+      flag:null, outcomeTag:'Rejected · User', past:[],
+      currentNote:'Hiring manager felt the experience skewed too traditional-finance, not crypto-native enough.', boardComments:[], workableComments:[]}
+};
+
+let activeBoard = 'th';
+let collapsedClosed = true;
+let justDragged = false;
+let toastTimer = null;
+
+/* ---------------- move (shared by drag, card dropdown, panel dropdown) ---------------- */
+function moveCandidate(cardId, newColId, opts={}){
+  const card = CARDS[cardId];
+  if(!card || card.col===newColId) return;
+  const board = BOARDS[card.board];
+  const newCol = board.columns.find(c=>c.id===newColId);
+  card.col = newColId;
+  renderBoard();
+  if(!opts.silent) showToast(`Moved ${card.name} to ${newCol.label}`);
+}
+
+/* ---------------- render tabs ---------------- */
+function renderTabs(){
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  Object.keys(BOARDS).forEach(id=>{
+    const tab = h('div',{class:'tab'+(id===activeBoard?' active':''),tabindex:'0',
+      onclick:()=>{ activeBoard=id; collapsedClosed=true; document.getElementById('searchInput').value=''; renderTabs(); renderBoard(); },
+      onkeydown:(e)=>{ if(e.key==='Enter'){ activeBoard=id; collapsedClosed=true; renderTabs(); renderBoard(); } }
+    }, BOARDS[id].name);
+    tabs.appendChild(tab);
+  });
+}
+
+/* ---------------- render board ---------------- */
+function renderBoard(){
+  const board = BOARDS[activeBoard];
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+
+  board.columns.forEach(col=>{
+    const color = colorForColumn(col.id);
+    const cardsForCol = Object.entries(CARDS)
+      .filter(([id,c])=> c.board===activeBoard && c.col===col.id)
+      .filter(([id,c])=> !query || c.name.toLowerCase().includes(query));
+
+    if(col.id==='closed' && collapsedClosed){
+      const collapsedWrap = h('div',{class:'column-collapsed',
+        onclick:()=>{ collapsedClosed=false; renderBoard(); }},
+        h('div',{class:'collapsed-inner'}, icon('chevronRight'),
+          h('span',{class:'collapsed-label'}, col.label),
+          h('span',{class:'col-count'}, String(cardsForCol.length)))
+      );
+      collapsedWrap.addEventListener('dragover', e=>{ e.preventDefault(); collapsedWrap.classList.add('drag-over'); });
+      collapsedWrap.addEventListener('dragleave', ()=> collapsedWrap.classList.remove('drag-over'));
+      collapsedWrap.addEventListener('drop', e=>{
+        e.preventDefault(); collapsedWrap.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain'); moveCandidate(id, col.id);
+      });
+      boardEl.appendChild(collapsedWrap);
+      return;
+    }
+
+    const body = h('div',{class:'column-body','data-col':col.id});
+    if(cardsForCol.length===0){
+      body.appendChild(h('div',{class:'empty-hint'}, query ? 'No matches here' : 'No candidates in this stage yet'));
+    } else {
+      cardsForCol.forEach(([id,c],i)=> body.appendChild(renderCard(id, c, board, color, i)));
+    }
+    body.addEventListener('dragover', e=>{ e.preventDefault(); body.classList.add('drag-over'); });
+    body.addEventListener('dragleave', ()=> body.classList.remove('drag-over'));
+    body.addEventListener('drop', e=>{
+      e.preventDefault(); body.classList.remove('drag-over');
+      const id = e.dataTransfer.getData('text/plain'); moveCandidate(id, col.id);
+    });
+
+    const head = h('div',{class:'column-head'},
+      h('span',{class:'col-dot',style:`background:${color}`}),
+      h('span',{class:'col-title'}, col.label),
+      h('span',{class:'col-count'}, String(cardsForCol.length))
+    );
+    if(col.id==='closed' && !collapsedClosed){
+      head.appendChild(h('button',{class:'col-collapse-btn', 'aria-label':'Collapse',
+        onclick:(e)=>{ e.stopPropagation(); collapsedClosed=true; renderBoard(); }}, icon('chevronLeft')));
+    }
+    boardEl.appendChild(h('div',{class:'column'}, head, body));
+  });
+}
+
+function renderCard(id, c, board, color, i){
+  const card = h('div',{
+    class:'card', draggable:'true', tabindex:'0',
+    style:`--col-color:${color}; animation-delay:${Math.min(i*30,240)}ms;`,
+    ondragstart:(e)=>{ justDragged=true; e.dataTransfer.setData('text/plain', id); card.classList.add('dragging'); },
+    ondragend:()=>{ card.classList.remove('dragging'); setTimeout(()=>{justDragged=false;},60); },
+    onclick:()=>{ if(justDragged){ justDragged=false; return; } openPanel(id); },
+    onkeydown:(e)=>{ if(e.key==='Enter') openPanel(id); }
+  });
+
+  card.appendChild(h('div',{class:'card-top'},
+    h('div',{class:'avatar',style:`background:${avatarColor(c.name)}`}, initials(c.name)),
+    h('div',{class:'card-id'},
+      h('div',{class:'card-name'}, c.name),
+      h('div',{class:'card-role'}, c.role)
+    )
+  ));
+
+  if(c.flag){
+    const cls = c.flag.type==='flame' ? 'urgent' : (c.flag.type==='check' ? 'positive' : '');
+    card.appendChild(h('div',{class:'flag-line '+cls}, icon(c.flag.type), h('span',{}, c.flag.text)));
+  }
+
+  const meta = h('div',{class:'meta-row'});
+  if(c.col==='closed'){
+    meta.appendChild(h('span',{class:'outcome-tag'}, c.outcomeTag));
+  } else {
+    const steps = board.columns.filter(cc=>cc.id!=='closed');
+    const filled = steps.findIndex(s=>s.id===c.col)+1;
+    const dots = h('div',{class:'dots'});
+    steps.forEach((s,idx)=> dots.appendChild(h('span',{class:'step-dot'+(idx<filled?' filled':'')})));
+    meta.appendChild(dots);
+  }
+
+  const select = h('select',{class:'card-stage-select', draggable:'false', 'aria-label':'Move to stage',
+    onclick:(e)=>{ e.stopPropagation(); },
+    onmousedown:(e)=>{ e.stopPropagation(); },
+    onchange:(e)=>{ e.stopPropagation(); moveCandidate(id, e.target.value); }
+  }, board.columns.map(col=> h('option',{value:col.id, selected: col.id===c.col ? 'selected' : null}, col.label)));
+  meta.appendChild(select);
+
+  card.appendChild(meta);
+  return card;
+}
+
+/* ---------------- panel ---------------- */
+function openPanel(id){
+  const c = CARDS[id];
+  const board = BOARDS[c.board];
+  const col = board.columns.find(cc=>cc.id===c.col);
+  const color = colorForColumn(c.col);
+
+  document.getElementById('panelAvatar').style.background = avatarColor(c.name);
+  document.getElementById('panelAvatar').textContent = initials(c.name);
+  document.getElementById('panelName').textContent = c.name;
+  document.getElementById('panelRole').textContent = c.role + ' · ' + board.name;
+
+  const badgeRow = document.getElementById('panelBadgeRow');
+  badgeRow.innerHTML = '';
+  badgeRow.appendChild(h('span',{class:'stage-badge',style:`background:${color}`}, col.label));
+  if(c.outcomeTag) badgeRow.appendChild(h('span',{class:'stage-badge',style:'background:'+NEUTRAL}, c.outcomeTag));
+
+  const moveSelect = document.getElementById('moveSelect');
+  moveSelect.innerHTML = '';
+  board.columns.forEach(col2=>{
+    const opt = document.createElement('option');
+    opt.value = col2.id; opt.textContent = col2.label;
+    if(col2.id===c.col) opt.selected = true;
+    moveSelect.appendChild(opt);
+  });
+  moveSelect.onchange = (e)=>{ moveCandidate(id, e.target.value); openPanel(id); };
+
+  const wk = document.getElementById('workableBox');
+  wk.innerHTML = '';
+  wk.appendChild(h('div',{class:'wk-row'}, h('span',{},'Source'), h('span',{}, c.source)));
+  wk.appendChild(h('div',{class:'wk-row'}, h('span',{},'Applied'), h('span',{}, c.applied+' 2026')));
+  wk.appendChild(h('div',{class:'wk-row'}, h('span',{},'Resume'),
+    h('a',{class:'resume-link',href:c.resume,target:'_blank',rel:'noopener'}, 'View file', icon('externalLink'))));
+  wk.appendChild(h('div',{class:'wk-row'}, h('span',{},'Last sync'), h('span',{},'4m ago')));
+
+  const outcomeSection = document.getElementById('outcomeSection');
+  outcomeSection.innerHTML = '';
+  if(c.col==='closed'){
+    outcomeSection.style.display='';
+    outcomeSection.appendChild(h('div',{class:'panel-section-label'},'Outcome'));
+    outcomeSection.appendChild(h('div',{class:'outcome-banner'}, icon('archive'), h('span',{}, c.outcomeTag+' — '+c.currentNote)));
+  } else if(c.col==='hired'){
+    outcomeSection.style.display='';
+    outcomeSection.appendChild(h('div',{class:'panel-section-label'},'Outcome'));
+    outcomeSection.appendChild(h('div',{class:'outcome-banner hired'}, icon('party'), h('span',{}, 'Hired — '+c.currentNote)));
+  } else {
+    outcomeSection.style.display='none';
+  }
+
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  c.past.forEach(p=>{
+    tl.appendChild(h('div',{class:'t-item'},
+      h('div',{class:'t-dot'}, icon('check')),
+      h('div',{class:'t-stage'}, p.stage),
+      h('div',{class:'t-meta'}, p.date+(p.by?' · '+p.by:'')),
+      p.note ? h('div',{class:'t-note'}, p.note) : null
+    ));
+  });
+  if(c.col!=='closed'){
+    tl.appendChild(h('div',{class:'t-item current'},
+      h('div',{class:'t-dot'}),
+      h('div',{}, h('span',{class:'t-stage'}, col.label), h('span',{class:'t-current-tag'}, c.col==='hired'?'FINAL':'IN PROGRESS')),
+      h('div',{class:'t-meta'}, 'current stage'),
+      h('div',{class:'t-note'}, c.currentNote)
+    ));
+    const steps = board.columns.filter(cc=>cc.id!=='closed');
+    const idx = steps.findIndex(s=>s.id===c.col);
+    steps.slice(idx+1).forEach(s=>{
+      tl.appendChild(h('div',{class:'t-item upcoming'},
+        h('div',{class:'t-dot'}),
+        h('div',{class:'t-stage'}, s.label),
+        h('div',{class:'t-note'}, 'Not started yet')
+      ));
+    });
+  } else {
+    tl.appendChild(h('div',{class:'t-item current'},
+      h('div',{class:'t-dot'}),
+      h('div',{class:'t-stage'}, 'Closed'),
+      h('div',{class:'t-meta'}, c.outcomeTag),
+      h('div',{class:'t-note'}, c.currentNote)
+    ));
+  }
+
+  renderComments(id);
+
+  document.getElementById('newCommentInput').value = '';
+  document.getElementById('postCommentBtn').onclick = ()=> addBoardComment(id);
+
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('panel').classList.add('open');
+}
+
+function renderComments(id){
+  const c = CARDS[id];
+  const boardList = document.getElementById('boardCommentsList');
+  boardList.innerHTML = '';
+  if(c.boardComments.length===0){
+    boardList.appendChild(h('div',{class:'comment-empty'}, 'No board comments yet — be the first to add one.'));
+  } else {
+    c.boardComments.forEach(cm=> boardList.appendChild(h('div',{class:'comment-item'},
+      h('div',{class:'comment-meta'}, h('span',{class:'comment-author'}, cm.author), h('span',{class:'comment-time'}, cm.when)),
+      h('div',{class:'comment-text'}, cm.text)
+    )));
+  }
+
+  const wkLabel = document.getElementById('workableCommentsLabel');
+  wkLabel.innerHTML = '';
+  wkLabel.appendChild(icon('sync'));
+  wkLabel.appendChild(document.createTextNode('Synced from Workable'));
+
+  const wkList = document.getElementById('workableCommentsList');
+  wkList.innerHTML = '';
+  if(c.workableComments.length===0){
+    wkList.appendChild(h('div',{class:'comment-empty'}, 'No comments synced from Workable yet.'));
+  } else {
+    c.workableComments.forEach(cm=> wkList.appendChild(h('div',{class:'comment-item'},
+      h('div',{class:'comment-meta'}, h('span',{class:'comment-author'}, cm.author), h('span',{class:'comment-time'}, cm.when)),
+      h('div',{class:'comment-text'}, cm.text)
+    )));
+  }
+}
+
+function addBoardComment(id){
+  const textarea = document.getElementById('newCommentInput');
+  const text = textarea.value.trim();
+  if(!text) return;
+  CARDS[id].boardComments.push({author:'You', when:'Just now', text});
+  textarea.value = '';
+  renderComments(id);
+  showToast('Comment added — will sync to Workable');
+}
+
+function closePanel(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('panel').classList.remove('open');
+}
+document.getElementById('panelClose').addEventListener('click', closePanel);
+document.getElementById('overlay').addEventListener('click', closePanel);
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closePanel(); });
+
+/* ---------------- toast ---------------- */
+function showToast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> t.classList.remove('show'), 2600);
+}
+
+/* ---------------- search ---------------- */
+document.getElementById('searchInput').addEventListener('input', renderBoard);
+
+/* ---------------- init ---------------- */
+renderTabs();
+renderBoard();
+</script>
+</body>
+</html>
